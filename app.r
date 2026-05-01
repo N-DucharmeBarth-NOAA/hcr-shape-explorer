@@ -336,26 +336,26 @@ ui <- function(request) {
 
         div(
           class = "mb-3",
-          p(class = "text-muted",
+          style = "display: flex; align-items: flex-start;
+                   justify-content: space-between; gap: 16px; flex-wrap: wrap;",
+          p(class = "text-muted mb-0", style = "flex: 1 1 320px; min-width: 280px;",
             HTML("This table shows the harvest-control-rule output multiplier
                  evaluated on a coarse grid of <b>SB/SB<sub>F=0</sub></b> values
                  (0 to 2 in steps of 0.05) using the parameter set currently
                  selected in the sidebar. Adjust the sliders to update the
-                 values; export the table or the parameter set using the buttons
-                 below.")
+                 values; export the table with the buttons above it, or
+                 download the parameter set on the right.")
+          ),
+          div(
+            style = "display: flex; gap: 8px; flex-wrap: wrap;",
+            downloadButton("download_params_json", "Parameters (JSON)",
+                           class = "btn-outline-primary btn-sm"),
+            downloadButton("download_params_r", "Parameters (R vector)",
+                           class = "btn-outline-primary btn-sm")
           )
         ),
 
-        DT::DTOutput("hcr_data_table"),
-
-        tags$hr(),
-        div(
-          style = "display: flex; gap: 8px; flex-wrap: wrap;",
-          downloadButton("download_params_json", "Parameters (JSON)",
-                         class = "btn-outline-primary btn-sm"),
-          downloadButton("download_params_r", "Parameters (R vector)",
-                         class = "btn-outline-primary btn-sm")
-        )
+        DT::DTOutput("hcr_data_table")
       )
     )
   )
