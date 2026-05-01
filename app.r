@@ -98,6 +98,34 @@ label_with_tip <- function(label_html, tip, swatch = NULL) {
   )
 }
 
+# ---- Parameter specs (ranges shared by UI helper and sync observers) -----
+param_specs <- list(
+  hcr_x           = list(min =   0, max =  2, step = 0.01),
+  sbsbf0_min      = list(min =   0, max =  2, step = 0.01),
+  sbsbf0_step_min = list(min =   0, max =  2, step = 0.01),
+  sbsbf0_step_max = list(min =   0, max =  2, step = 0.01),
+  sbsbf0_max      = list(min =   0, max =  2, step = 0.01),
+  out_min         = list(min =   0, max =  2, step = 0.01),
+  step_height     = list(min =   0, max =  2, step = 0.01),
+  out_max         = list(min =   0, max =  2, step = 0.01),
+  curve           = list(min = -30, max = 30, step = 0.1)
+)
+
+# ---- Slider + numeric pair helper ----------------------------------------
+slider_num_pair <- function(id, label, min, max, value, step) {
+  div(
+    style = "display: flex; align-items: flex-end; gap: 6px;",
+    div(style = "flex: 1; min-width: 0;",
+      sliderInput(id, label = label, min = min, max = max,
+                  value = value, step = step)
+    ),
+    div(style = "width: 80px; flex-shrink: 0;",
+      numericInput(paste0(id, "_num"), label = NULL,
+                   value = value, min = min, max = max, step = step)
+    )
+  )
+}
+
 # ---- JS: Bootstrap 5 tooltips + clipboard handler ------------------------
 # The clipboard handler reports success/failure back to R via
 # input$clipboard_status so we can show an accurate toast.
@@ -178,7 +206,7 @@ ui <- function(request) {
     ),
 
     sidebar = sidebar(
-      width = 340,
+      width = 360,
       title = "Parameters",
 
       accordion(
@@ -191,7 +219,7 @@ ui <- function(request) {
         accordion_panel(
           "Selected point",
           icon = bs_icon("crosshair"),
-          sliderInput("hcr_x",
+          slider_num_pair("hcr_x",
             label = label_with_tip(
               "Current \\(SB/SB_{F=0}\\)",
               "Position on the x-axis where the selected point is drawn on the curve.",
@@ -205,7 +233,7 @@ ui <- function(request) {
           "Breakpoints (x-axis)",
           icon = bs_icon("arrows-expand-vertical"),
 
-          sliderInput("sbsbf0_min",
+          slider_num_pair("sbsbf0_min",
             label = label_with_tip(
               "Min \\(SB/SB_{F=0}\\)",
               "Lower x-axis breakpoint. Below this depletion the curve is clamped at Min output multiplier.",
@@ -213,7 +241,7 @@ ui <- function(request) {
             ),
             min = 0, max = 2, value = unname(default_params["sbsbf0_min"]), step = 0.01),
 
-          sliderInput("sbsbf0_step_min",
+          slider_num_pair("sbsbf0_step_min",
             label = label_with_tip(
               "Step start \\(SB/SB_{F=0}\\)",
               "End of the asymptotic left branch. Beyond this point the curve switches to the right threshold branch.",
@@ -221,7 +249,7 @@ ui <- function(request) {
             ),
             min = 0, max = 2, value = unname(default_params["sbsbf0_step_min"]), step = 0.01),
 
-          sliderInput("sbsbf0_step_max",
+          slider_num_pair("sbsbf0_step_max",
             label = label_with_tip(
               "Step end \\(SB/SB_{F=0}\\)",
               "Lower x of the upper linear ramp. Below this (but above Step start) the right branch is clamped at Step height.",
@@ -229,7 +257,7 @@ ui <- function(request) {
             ),
             min = 0, max = 2, value = unname(default_params["sbsbf0_step_max"]), step = 0.01),
 
-          sliderInput("sbsbf0_max",
+          slider_num_pair("sbsbf0_max",
             label = label_with_tip(
               "Max \\(SB/SB_{F=0}\\)",
               "Upper x-axis breakpoint. Above this depletion the curve is clamped at Max output multiplier.",
@@ -243,7 +271,7 @@ ui <- function(request) {
           "Levels (y-axis)",
           icon = bs_icon("arrows-expand"),
 
-          sliderInput("out_min",
+          slider_num_pair("out_min",
             label = label_with_tip(
               "Min output multiplier",
               "Output multiplier applied below the lower x-axis breakpoint.",
@@ -251,7 +279,7 @@ ui <- function(request) {
             ),
             min = 0, max = 2, value = unname(default_params["out_min"]), step = 0.01),
 
-          sliderInput("step_height",
+          slider_num_pair("step_height",
             label = label_with_tip(
               "Step height",
               "Output multiplier on the flat plateau between Step start and Step end.",
@@ -259,7 +287,7 @@ ui <- function(request) {
             ),
             min = 0, max = 2, value = unname(default_params["step_height"]), step = 0.01),
 
-          sliderInput("out_max",
+          slider_num_pair("out_max",
             label = label_with_tip(
               "Max output multiplier",
               "Output multiplier applied above the upper x-axis breakpoint.",
@@ -272,7 +300,7 @@ ui <- function(request) {
         accordion_panel(
           "Curve shape",
           icon = bs_icon("graph-up"),
-          sliderInput("curve",
+          slider_num_pair("curve",
             label = label_with_tip(
               "Curvature (\\(\\kappa\\))",
               "Steepness of the asymptotic left branch. Larger values give a sharper rise from Min to Step height."
@@ -374,7 +402,11 @@ server <- function(input, output, session) {
   setBookmarkExclude(c("reset_defaults", "copy_params", "share_link",
                        "main_tabs", "param_accordion",
                        "download_params_json", "download_params_r",
-                       "clipboard_status"))
+                       "clipboard_status",
+                       "hcr_x_num", "sbsbf0_min_num", "sbsbf0_step_min_num",
+                       "sbsbf0_step_max_num", "sbsbf0_max_num",
+                       "out_min_num", "step_height_num", "out_max_num",
+                       "curve_num"))
 
   # -- Bundle current sliders into the named vector the HCR fn expects ----
   hcr_params <- reactive({
@@ -389,6 +421,32 @@ server <- function(input, output, session) {
       curve           = input$curve
     )
   })
+
+  # -- Slider <-> numeric sync -------------------------------------------
+  for (nm in names(param_specs)) {
+    local({
+      id     <- nm
+      num_id <- paste0(nm, "_num")
+      lo     <- param_specs[[nm]]$min
+      hi     <- param_specs[[nm]]$max
+
+      observeEvent(input[[id]], {
+        new_val <- input[[id]]
+        if (!is.null(new_val) && !isTRUE(all.equal(input[[num_id]], new_val))) {
+          updateNumericInput(session, num_id, value = new_val)
+        }
+      }, ignoreInit = TRUE)
+
+      observeEvent(input[[num_id]], {
+        raw <- input[[num_id]]
+        if (is.null(raw) || is.na(raw)) return()
+        clamped <- max(lo, min(hi, raw))
+        if (!isTRUE(all.equal(input[[id]], clamped))) {
+          updateSliderInput(session, id, value = clamped)
+        }
+      }, ignoreInit = TRUE)
+    })
+  }
 
   # -- Breakpoint validation ---------------------------------------------
   observeEvent(input$sbsbf0_min, {
