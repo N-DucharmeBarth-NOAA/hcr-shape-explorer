@@ -1,0 +1,53 @@
+name: Deploy to Posit Connect
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.5.2'
+          use-public-rspm: true
+
+      - name: Setup renv and restore packages
+        uses: r-lib/actions/setup-renv@v2
+
+      - name: Deploy to Posit Connect
+        env:
+          CONNECT_SERVER: ${{ secrets.CONNECT_SERVER }}
+          CONNECT_API_KEY: ${{ secrets.CONNECT_API_KEY }}
+        shell: Rscript {0}
+        run: |
+          rsconnect::addServer(
+            url  = Sys.getenv("CONNECT_SERVER"),
+            name = "connect"
+          )
+          rsconnect::connectApiUser(
+            account = "deployer",
+            server  = "connect",
+            apiKey  = Sys.getenv("CONNECT_API_KEY")
+          )
+          rsconnect::deployApp(
+            appDir      = ".",
+            appName     = "hcr-shape-explorer",
+            appTitle    = "HCR Explorer",
+            appId       = 613,
+            account     = "deployer",
+            server      = "connect",
+            forceUpdate = TRUE
+          )
