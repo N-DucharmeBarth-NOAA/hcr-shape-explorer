@@ -16,6 +16,10 @@ hcr_asymptotic_hillary_step_manual <- function(sbsbf0, params) {
   out_max         <- unname(params["out_max"])
   curve           <- unname(params["curve"])
 
+  if(curve == 0) {
+    curve <- 1e-6
+  }
+
   # left asymptotic branch
   z1 <- exp(-curve * sbsbf0_min)
   z2 <- exp(-curve * sbsbf0_step_min)
@@ -273,7 +277,7 @@ ui <- function(request) {
               "Curvature (\\(\\kappa\\))",
               "Steepness of the asymptotic left branch. Larger values give a sharper rise from Min to Step height."
             ),
-            min = 0.1, max = 50, value = unname(default_params["curve"]), step = 0.1)
+            min = -30, max = 30, value = unname(default_params["curve"]), step = 0.1)
         )
       ),
 
